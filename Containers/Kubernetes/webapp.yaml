@@ -1,0 +1,60 @@
+# Deployment for WebApp
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  # How many Pods to Create
+  replicas: 1
+  # All Pods with label webapp belong to this Deployment
+  selector:
+    matchLabels:
+      app: webapp
+  # Configuration for Pod
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      # Create Container with WebApp Image
+      containers:
+      - name: webappdb
+        image: nanajanashia/k8s-demo-app:v1.0
+        ports:
+        - containerPort: 3000
+        # Set Environment Variables for WebApp to connect to MongoDB
+        env:
+        - name: USER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user
+        - name: USER_PWD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password   
+        - name: DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mongo-config
+              key: mongo-url 
+---
+# Service for WebApp Deploymennt
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  # Set to External Service Type
+  type: NodePort
+  selector:
+    app: webapp
+  ports:
+    # Request -> Port -> TargetPort -> ContainerPort
+    - protocol: TCP
+      port: 3000 # Any Port
+      targetPort: 3000 # WebApp Port
+      nodePort: 30100 # Port to access outside the cluster

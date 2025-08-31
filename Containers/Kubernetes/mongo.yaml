@@ -1,0 +1,52 @@
+# Deployment for MongoDB
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  labels:
+    app: mongo
+spec:
+  # How many Pods to Create
+  replicas: 1
+  # All Pods with label mongo belong to this Deployment
+  selector:
+    matchLabels:
+      app: mongo
+  # Configuration for Pod
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      # Create Container with MongoDB Image
+      containers:
+      - name: mongodb
+        image: mongo:5.0
+        ports:
+        - containerPort: 27017
+        # Set Environment Variables for MongoDB
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password   
+---
+# Service for MongoDB Deploymennt
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  selector:
+    app: mongo
+  ports:
+    # Request -> Port -> TargetPort -> ContainerPort
+    - protocol: TCP
+      port: 27017 # Any Port
+      targetPort: 27017 # MongoDB Port
